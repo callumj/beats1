@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+
+require 'beats1'
+require 'rufus-scheduler'
+
+scheduler = Rufus::Scheduler.new
+
+scheduler.every '1m' do
+  x = Beats1::Tweet.tweet
+  puts x.inspect
+end
+
+scheduler.join
