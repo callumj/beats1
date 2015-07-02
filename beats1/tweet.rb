@@ -1,5 +1,7 @@
 require 'twitter'
 
+HASHTAGS = "#beats1"
+
 module Beats1
   class Tweet
 
@@ -16,8 +18,14 @@ module Beats1
       tweet = "#{title} - #{artist}"
       raise tweet unless tweet.length >= 10
 
+      old_tweet = nil
+      if (new_tweet = "#{tweet} #{HASHTAGS}") && new_tweet.length <= 140
+        old_tweet = tweet
+        tweet = new_tweet
+      end
+
       last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
-      if last_tweet == nil || last_tweet.text != tweet
+      if (last_tweet == nil || last_tweet.text != tweet) && last_tweet.text != old_tweet
         client.update tweet
         return {tweet: tweet, updated: true}
       else

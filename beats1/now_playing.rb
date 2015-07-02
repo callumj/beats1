@@ -29,7 +29,7 @@ module Beats1
       metadata_file.seek 0
       contents = metadata_file.read
       raise "No metadata body" unless contents.length > 0
-      listing = contents.split(/\n/)
+      listing = contents.split(/\n/) rescue (raise contents)
       hsh = {}
       listing.each do |l|
         key = l.match(/^(?:(title|artist|album)=)/)
