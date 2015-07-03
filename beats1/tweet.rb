@@ -1,4 +1,5 @@
 require 'twitter'
+require 'itunes-search-api'
 
 HASHTAGS = "#beats1"
 
@@ -18,14 +19,24 @@ module Beats1
       tweet = "#{title} - #{artist}"
       raise tweet unless tweet.length >= 10
 
-      old_tweet = nil
-      if (new_tweet = "#{tweet} #{HASHTAGS}") && new_tweet.length <= 140
-        old_tweet = tweet
-        tweet = new_tweet
+      tweet_length = tweet.length
+
+      begin
+        res = ITunesSearchAPI.search(term: tweet, country: "US", media: "music")
+        if res && (first = res[0]) && (url = first["trackViewUrl"]) && (tweet_length + 21) <= 140
+          tweet << " #{url}"
+          tweet_length += 21
+        end
+      rescue StandardError => e
+        STDERR.puts "ITunesSearch error: #{e}"
+      end
+
+      if " #{HASHTAGS}".length + tweet_length <= 140
+        tweet << " #{HASHTAGS}"
       end
 
       last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
-      if (last_tweet == nil || last_tweet.text != tweet) && last_tweet.text != old_tweet
+      if (last_tweet == nil || last_tweet.text != tweet)
         client.update tweet
         return {tweet: tweet, updated: true}
       else

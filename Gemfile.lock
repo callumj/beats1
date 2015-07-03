@@ -10,10 +10,16 @@ GEM
     http (0.6.4)
       http_parser.rb (~> 0.6.0)
     http_parser.rb (0.6.0)
+    httparty (0.13.5)
+      json (~> 1.8)
+      multi_xml (>= 0.5.2)
+    itunes-search-api (0.1.0)
+      httparty
     json (1.8.3)
     memoizable (0.4.2)
       thread_safe (~> 0.3, >= 0.3.1)
     method_source (0.8.2)
+    multi_xml (0.5.5)
     multipart-post (2.0.0)
     naught (1.0.0)
     pry (0.10.1)
@@ -41,6 +47,7 @@ PLATFORMS
 
 DEPENDENCIES
   faraday
+  itunes-search-api
   pry
   rufus-scheduler
   twitter

@@ -7,7 +7,7 @@ require 'rufus-scheduler'
 
 scheduler = Rufus::Scheduler.new
 
-scheduler.every '1m' do
+scheduler.every '45s' do
   x = Beats1::Tweet.tweet
   puts x.inspect
 end
