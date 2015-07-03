@@ -17,6 +17,7 @@ module Beats1
       np = Beats1::NowPlaying.now_playing
       raise np.inspect unless (artist = np[:artist]) && (title = np[:title])
       tweet = "#{title} - #{artist}"
+      original_tweet = tweet.dup
       raise tweet unless tweet.length >= 10
 
       tweet_length = tweet.length
@@ -36,7 +37,7 @@ module Beats1
       end
 
       last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
-      if (last_tweet == nil || last_tweet.text != tweet)
+      if last_tweet == nil || !last_tweet.text.include?(original_tweet)
         client.update tweet
         return {tweet: tweet, updated: true}
       else
