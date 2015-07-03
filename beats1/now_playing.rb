@@ -24,7 +24,7 @@ module Beats1
       file.close
 
       # decode in ffmpeg
-      metadata_file = Tempfile.new "metadata"
+      metadata_file = Tempfile.new "metadata", encoding: "utf-8"
       res = system `/bin/bash -c 'ffmpeg -y -i #{file.path} -f ffmetadata #{metadata_file.path} &> /dev/null'`
       metadata_file.seek 0
       contents = metadata_file.read
