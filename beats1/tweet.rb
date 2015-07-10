@@ -27,7 +27,7 @@ module Beats1
     def tweet
       np = Beats1::NowPlaying.now_playing
       unless (artist = np[:artist]) && (title = np[:title])
-        @last_known_show = title
+        @last_known_show = title if title
         raise NoArtistError, np.inspect
       end
       tweet = "#{title} - #{artist}"
