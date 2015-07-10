@@ -22,11 +22,13 @@ GEM
     multi_xml (0.5.5)
     multipart-post (2.0.0)
     naught (1.0.0)
+    pg (0.18.2)
     pry (0.10.1)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
     rufus-scheduler (3.1.3)
+    sequel (4.24.0)
     simple_oauth (0.3.1)
     slop (3.6.0)
     thread_safe (0.3.5)
@@ -48,6 +50,8 @@ PLATFORMS
 DEPENDENCIES
   faraday
   itunes-search-api
+  pg
   pry
   rufus-scheduler
+  sequel
   twitter

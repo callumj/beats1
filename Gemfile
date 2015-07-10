@@ -5,3 +5,6 @@ gem "faraday"
 gem "pry"
 gem "twitter"
 gem "itunes-search-api"
+
+gem "sequel"
+gem "pg"

@@ -6,10 +6,37 @@ require 'beats1'
 require 'rufus-scheduler'
 
 scheduler = Rufus::Scheduler.new
+tweeter = Beats1::Tweet.new
+database = nil
 
-scheduler.every '45s' do
-  x = Beats1::Tweet.tweet
-  puts x.inspect
+if url = ENV["DB_URL"]
+  require 'sequel'
+
+  database = Sequel.connect(url)
+  database.create_table? :played_tracks do |t|
+    primary_key :id
+    String  :title
+    String  :artist
+    Time    :played_at
+    String  :last_known_show
+    Bignum  :itunes_id
+  end
+
+  require 'beats1/played_track'
+end
+
+
+scheduler.every '15s', overlap: false do
+  begin
+    data = tweeter.tweet
+    if database && data[:updated]
+      STDOUT.puts data.inspect
+      PlayedTrack.create title: data[:title], artist: data[:artist], played_at: Time.now,
+        last_known_show: data[:last_known_show], itunes_id: data[:itunes_id]
+    end
+  rescue Beats1::Tweet::Error => e
+    STDERR.puts "Error: #{e.inspect}"
+  end
 end
 
 scheduler.join
