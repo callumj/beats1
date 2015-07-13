@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+
+require 'beats1'
+require 'csv'
+
+def clean(obj)
+  return obj unless obj.is_a?(String)
+  obj.gsub(/(\s|\n)+/," ")
+end
+
+CSV do |c|
+  c << ["Screen Name", "Name", "Description", "Verified", "Followers", "Friends"]
+  u = Beats1::Tweet.new.followers(count: 200)
+  count = 0
+  u.each do |user|
+    c << [clean(user.screen_name), clean(user.name), clean(user.description), user.verified?.to_s, user.followers_count, user.friends_count]
+    count += 1
+    if ((count % 200) == 0)
+      STDERR.puts "Sleeping"
+      sleep 60
+    end
+  end
+end

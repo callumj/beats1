@@ -69,7 +69,7 @@ module Beats1
     end
 
     def update(tweet)
-      client.update tweet
+      #client.update tweet
       @last_tweet = tweet
     end
 
