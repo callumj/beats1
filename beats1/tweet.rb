@@ -63,13 +63,13 @@ module Beats1
         if res && res[0]
           result = res[0]
         end
-        if (url = result["trackViewUrl"]) && (tweet_length + 21) <= 140
+        if result && (url = result["trackViewUrl"]) && (tweet_length + 21) <= 140
           itunes_id = result["trackId"]
           tweet << " #{url}"
           tweet_length += 21
         end
       rescue StandardError => e
-        STDERR.puts "ITunesSearch error: #{e}"
+        STDERR.puts "ITunesSearch error: #{e} #{e.backtrace}"
       end
 
       if " #{HASHTAGS}".length + tweet_length <= 140
