@@ -1,13 +1,24 @@
 require 'csv'
 require 'faraday'
 require 'tempfile'
+require 'json'
 
 module Beats1
   class NowPlaying
 
+    def self.programs
+      conn = Faraday.new(url: 'http://fuse-music.herokuapp.com/') do |faraday|
+        faraday.adapter  Faraday.default_adapter
+      end
+
+      resp = conn.get "/api/programs"
+      raise "No body" unless resp.body
+      JSON.parse resp.body
+    end
+
     def self.now_playing
       conn = Faraday.new(url: 'http://itsliveradiobackup.apple.com/') do |faraday|
-        faraday.adapter  Faraday.default_adapter  # make requests with Net::HTTP
+        faraday.adapter  Faraday.default_adapter
       end
 
       # fetch the available M3Us
