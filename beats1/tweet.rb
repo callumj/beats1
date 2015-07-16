@@ -1,6 +1,7 @@
 require 'twitter'
 require 'itunes-search-api'
 require 'cgi'
+require 'pry'
 
 HASHTAGS = "#beats1"
 
@@ -32,7 +33,11 @@ module Beats1
       diff = Time.now.to_i - (show["start"]/1000)
       if @last_known_show != show && (diff <= 60) && !@last_tweet.include?(show["title"])
         begin
-          update "Now up on @Beats1: #{show["title"]}"
+          t = "Now up on @Beats1: #{show["title"]}"
+          if show["image"]
+            t << " #{show["image"]}"
+          end
+          update t
         rescue StandardError => err
           STDERR.puts err.inspect
         end
@@ -101,6 +106,7 @@ module Beats1
       end
 
       @last_tweet ||= begin
+        return nil
         last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
         return nil unless last_tweet
         @last_tweeted_updated = Time.now
