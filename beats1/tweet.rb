@@ -33,11 +33,13 @@ module Beats1
       diff = Time.now.to_i - (show["start"]/1000)
       if @last_known_show != show && (diff <= 60) && !@last_tweet.include?(show["title"])
         begin
+          opts = {}
           t = "Now up on @Beats1: #{show["title"]}"
           if show["image"]
-            t << " #{show["image"]}"
+            media_id = url_to_media_id artworkUrl
+            opts[:media_ids] = [media_id] if media_id
           end
-          update t
+          update t, opts
         rescue StandardError => err
           STDERR.puts err.inspect
         end
@@ -61,6 +63,7 @@ module Beats1
 
       tweet_length = tweet.length
 
+      media_id = nil
       itunes_id = nil
       result = nil
       begin
@@ -69,9 +72,14 @@ module Beats1
           result = res[0]
         end
         if result && (url = result["trackViewUrl"]) && (tweet_length + 21) <= 140
+          url.gsub!(/\/itunes/, "/geo.itunes")
           itunes_id = result["trackId"]
           tweet << " #{url}"
           tweet_length += 21
+
+          # upload media object of iTunes artwork
+          artworkUrl = result["artworkUrl30"].gsub("30x30-50.jpg", "500x500-75.jpg")
+          media_id = url_to_media_id artworkUrl
         end
       rescue StandardError => e
         STDERR.puts "ITunesSearch error: #{e} #{e.backtrace}"
@@ -81,7 +89,11 @@ module Beats1
         tweet << " #{HASHTAGS}"
       end
 
-      update tweet
+      opts = {}
+      if media_id
+        opts = {media_ids: [media_id]}
+      end
+      update tweet, opts
       {
         tweet: tweet,
         artist: artist,
@@ -93,9 +105,14 @@ module Beats1
       }
     end
 
-    def update(tweet)
-      STDOUT.puts "Tweet: #{tweet}"
-      client.update tweet
+    def update(tweet, tw_opts = {})
+      STDOUT.puts "Tweet: #{tweet}. Opts: #{tw_opts}"
+      begin
+        client.update tweet, tw_opts
+      rescue StandardError => err
+        STDERR.puts err.inspect
+        client.update tweet
+      end
       @last_tweet = tweet
     end
 
@@ -106,7 +123,6 @@ module Beats1
       end
 
       @last_tweet ||= begin
-        return nil
         last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
         return nil unless last_tweet
         @last_tweeted_updated = Time.now
@@ -135,6 +151,26 @@ module Beats1
         res.unshift closest
       end
       res
+    end
+
+    def url_to_media_id(url)
+      resp = Faraday.get url
+      if resp.status == 200
+        begin
+          temp = Tempfile.new(["artwork", ".jpg"])
+          temp.write resp.body
+          temp.rewind
+          return client.upload temp
+        rescue StandardError => err
+          STDERR.puts err.inspect
+          return nil
+        ensure
+          if temp
+            temp.close
+            temp.unlink
+          end
+        end
+      end
     end
 
   end
