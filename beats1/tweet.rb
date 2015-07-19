@@ -13,7 +13,7 @@ module Beats1
     class SmallLengthError < Error; end
 
     def client
-      @client ||= Twitter::REST::Client.new do |config|
+      Twitter::REST::Client.new do |config|
         config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
         config.consumer_secret     = ENV["TWITTER_CONSUMER_SECRET"]
         config.access_token        = ENV["TWITTER_ACCESS_TOKEN"]
@@ -37,7 +37,7 @@ module Beats1
           t = "Now up on @Beats1: #{show["title"]}"
           if show["image"]
             media_id = url_to_media_id artworkUrl
-            opts[:media_ids] = [media_id] if media_id
+            opts[:media_ids] = media_id if media_id
           end
           update t, opts
         rescue StandardError => err
@@ -91,7 +91,7 @@ module Beats1
 
       opts = {}
       if media_id
-        opts = {media_ids: [media_id]}
+        opts = {media_ids: media_id}
       end
       update tweet, opts
       {
