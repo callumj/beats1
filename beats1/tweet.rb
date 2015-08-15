@@ -2,6 +2,7 @@ require 'twitter'
 require 'itunes-search-api'
 require 'cgi'
 require 'pry'
+require 'beats1/tweet_db'
 
 HASHTAGS = "#beats1"
 
@@ -11,6 +12,14 @@ module Beats1
     class Error < StandardError; end
     class NoArtistError < Error; end
     class SmallLengthError < Error; end
+
+    def self.db
+      @@db ||= Beats1::TweetDB.new
+    end
+
+    def db
+      self.class.db
+    end
 
     def client
       Twitter::REST::Client.new do |config|
@@ -31,7 +40,7 @@ module Beats1
       show = p.detect { |p| Range.new(p["start"]/1000,p["end"]/1000).include?(Time.now.to_i)}
       return unless show
       diff = Time.now.to_i - (show["start"]/1000)
-      if @last_known_show != show && (diff <= 60) && !@last_tweet.include?(show["title"])
+      if @last_known_show != show && (diff <= 60) && db.tweeted?(show["title"])
         begin
           opts = {}
           t = "Now up on @Beats1: #{show["title"]}"
@@ -56,8 +65,7 @@ module Beats1
 
       raise SmallLengthError, tweet unless tweet.length >= 10
 
-      lst = last_tweet
-      if lst != nil && normalize(lst).include?(normalize(tweet))
+      if db.tweeted? tweet
         return {tweet: tweet, updated: false}
       end
 
@@ -93,7 +101,7 @@ module Beats1
       if media_id
         opts = {media_ids: media_id}
       end
-      update tweet, opts
+      tweet_data = update tweet, opts
       {
         tweet: tweet,
         artist: artist,
@@ -101,37 +109,36 @@ module Beats1
         last_known_show: @last_known_show,
         updated: true,
         itunes_id: itunes_id,
-        genre: result && result["primaryGenreName"]
+        genre: result && result["primaryGenreName"],
+        tweet_id: tweet_data && tweet_data.id
       }
     end
 
     def update(tweet, tw_opts = {})
+      raise "Dupe tweet!" if db.tweeted? tweet
       STDOUT.puts "Tweet: #{tweet}. Opts: #{tw_opts}"
+      res = nil
       begin
         client.update tweet, tw_opts
       rescue StandardError => err
         STDERR.puts err.inspect
-        client.update tweet
+        res = client.update tweet
       end
-      @last_tweet = tweet
+      db.record_tweet tweet
+      res
     end
 
-    def last_tweet
-      if @last_tweeted_updated && ((Time.now - @last_tweeted_updated) >= 60)
-        STDERR.puts "Refreshing tweet"
-        @last_tweet = nil
+    def refresh_last_tweet
+      if @last_tweeted_updated && ((Time.now - @last_tweeted_updated) <= 60)
+        return # no update needed
       end
 
-      @last_tweet ||= begin
-        last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
-        return nil unless last_tweet
-        @last_tweeted_updated = Time.now
-        CGI.unescapeHTML last_tweet.text
-      end
-    end
-
-    def normalize(txt)
-      txt.gsub(/([^A-Za-z0-9_\- ]+)/,"").gsub(/\s+/, " ")
+      STDERR.puts "Fetching latest tweet...."
+      last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
+      return nil unless last_tweet
+      @last_tweeted_updated = Time.now
+      escape = CGI.unescapeHTML last_tweet.text
+      db.record_tweet(escape) unless db.tweeted?(escape)
     end
 
     def search_itunes(title, artist)
@@ -144,13 +151,18 @@ module Beats1
           val[0..5] == normed[0..5]
         end
       end
-      closest = res.find do |f|
-        f["artistName"] == artist
+      a = normalize(artist)
+      closest = res.detect do |f|
+        normalize(f["artistName"]) == a
       end
       if closest
         res.unshift closest
       end
       res
+    end
+
+    def normalize(txt)
+      txt.gsub(/([^A-Za-z0-9_\- ]+)/,"").gsub(/\s+/, " ")
     end
 
     def url_to_media_id(url)

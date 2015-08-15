@@ -21,11 +21,13 @@ if url = ENV["DB_URL"]
     String  :last_known_show
     Bignum  :itunes_id
     String  :genre
+    Bignum  :tweet_id
   end
 
   require 'beats1/played_track'
 end
 
+tweeter.refresh_last_tweet
 
 scheduler.every '15s', overlap: false do
   begin
@@ -34,7 +36,8 @@ scheduler.every '15s', overlap: false do
       STDOUT.puts data.inspect
       if database
         PlayedTrack.create title: data[:title], artist: data[:artist], played_at: Time.now,
-          last_known_show: data[:last_known_show], itunes_id: data[:itunes_id], genre: data[:genre]
+          last_known_show: data[:last_known_show], itunes_id: data[:itunes_id], genre: data[:genre],
+          tweet_id: data[:tweet_id]
       end
     end
   rescue Beats1::Tweet::Error => e
@@ -44,6 +47,10 @@ end
 
 scheduler.every '10s', overlap: false do
   tweeter.refresh_current_program
+end
+
+scheduler.every '60s', overlap: false do
+  tweeter.refresh_last_tweet
 end
 
 scheduler.join
