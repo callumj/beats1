@@ -119,7 +119,7 @@ module Beats1
       STDOUT.puts "Tweet: #{tweet}. Opts: #{tw_opts}"
       res = nil
       begin
-        client.update tweet, tw_opts
+        res = client.update tweet, tw_opts
       rescue StandardError => err
         STDERR.puts err.inspect
         res = client.update tweet
