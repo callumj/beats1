@@ -40,7 +40,7 @@ module Beats1
       show = p.detect { |p| Range.new(p["start"]/1000,p["end"]/1000).include?(Time.now.to_i)}
       return unless show
       diff = Time.now.to_i - (show["start"]/1000)
-      if @last_known_show != show && (diff <= 60) && db.tweeted?(show["title"])
+      if @last_known_show != show && (diff <= 60) && !db.tweeted?(show["title"])
         begin
           opts = {}
           t = "Now up on @Beats1: #{show["title"]}"
@@ -142,10 +142,10 @@ module Beats1
     end
 
     def search_itunes(title, artist)
-      res = ITunesSearchAPI.search(term: "#{title} - #{artist}", country: "US", media: "music")
+      original = res = ITunesSearchAPI.search(term: "#{title} - #{artist}", country: "US", media: "music")
       return nil unless res
       normed = normalize title
-      res.select! do |f|
+      res = res.select do |f|
         ["trackName", "trackCensoredName"].any? do |k|
           next false unless (f[k] && val = normalize(f[k]))
           val[0..5] == normed[0..5]
@@ -158,7 +158,24 @@ module Beats1
       if closest
         res.unshift closest
       end
+
+      if res.length == 0
+        debug_itunes_failure title, artist, original
+      end
+
       res
+    end
+
+    def debug_itunes_failure(title, artist, original)
+      STDERR.puts "No iTunes tracks found for #{title} - #{artist}"
+      unless original.length == 0
+        debug = original.map do |t|
+          "#{t["trackName"]} - #{t["artistName"]}"
+        end
+        STDERR.puts "Data: #{debug.join("\r\n")}"
+      end
+    rescue Error => err
+      STDERR.puts "Err: #{err}"
     end
 
     def normalize(txt)
