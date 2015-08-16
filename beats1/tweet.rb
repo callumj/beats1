@@ -3,6 +3,8 @@ require 'itunes-search-api'
 require 'cgi'
 require 'pry'
 require 'beats1/tweet_db'
+require 'beats1/mb_client'
+require 'timeout'
 
 HASHTAGS = "#beats1"
 
@@ -19,6 +21,10 @@ module Beats1
 
     def db
       self.class.db
+    end
+
+    def mb_client
+      @mb_client ||= Beats1::MBClient.new
     end
 
     def client
@@ -45,7 +51,7 @@ module Beats1
           opts = {}
           t = "Now up on @Beats1: #{show["title"]}"
           if show["image"]
-            media_id = url_to_media_id artworkUrl
+            media_id = url_to_media_id show["image"]
             opts[:media_ids] = media_id if media_id
           end
           update t, opts
@@ -67,6 +73,11 @@ module Beats1
 
       if db.tweeted? tweet
         return {tweet: tweet, updated: false}
+      end
+
+      mb_artist = search_mb artist
+      if mb_artist && (tw_artist = mb_artist[:twitter])
+        tweet << " (@#{tw_artist})"
       end
 
       tweet_length = tweet.length
@@ -110,7 +121,8 @@ module Beats1
         updated: true,
         itunes_id: itunes_id,
         genre: result && result["primaryGenreName"],
-        tweet_id: tweet_data && tweet_data.id
+        tweet_id: tweet_data && tweet_data.id,
+        mb_id: mb_artist && mb_artist[:artist].id
       }
     end
 
@@ -139,6 +151,14 @@ module Beats1
       @last_tweeted_updated = Time.now
       escape = CGI.unescapeHTML last_tweet.text
       db.record_tweet(escape) unless db.tweeted?(escape)
+    end
+
+    def search_mb(artist)
+      Timeout::timeout(5) do
+        mb_client.find_artist artist
+      end
+    rescue
+      nil
     end
 
     def search_itunes(title, artist)
