@@ -3,7 +3,7 @@ require 'thread'
 module Beats1
   class TweetDB
 
-    MAX_LENGTH = 1000
+    MAX_LENGTH = 10
 
     def initialize
       @tweets = []
