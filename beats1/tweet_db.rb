@@ -24,7 +24,7 @@ module Beats1
       @mutex.synchronize do
         STDERR.puts "Pushing #{norm}"
         @tweets.push norm
-        if @tweets.length == MAX_LENGTH
+        if @tweets.length >= MAX_LENGTH
           evict = @tweets.shift
             STDERR.puts "Evicting #{evict}"
          end
