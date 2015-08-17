@@ -172,11 +172,10 @@ module Beats1
         end
       end
       a = normalize(artist)
-      closest = res.detect do |f|
-        normalize(f["artistName"]) == a
-      end
-      if closest
-        res.unshift closest
+      res = res.select do |f|
+        next unless f["artistName"]
+        norm = normalize(f["artistName"])
+        norm == a || norm.include?(a) || a.include?(norm)
       end
 
       if res.length == 0
