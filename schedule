@@ -10,22 +10,7 @@ tweeter = Beats1::Tweet.new
 database = nil
 
 if url = ENV["DB_URL"]
-  require 'sequel'
-
-  database = Sequel.connect(url)
-  database.create_table? :played_tracks do |t|
-    primary_key :id
-    String  :title
-    String  :artist
-    Time    :played_at
-    String  :last_known_show
-    Bignum  :itunes_id
-    String  :genre
-    Bignum  :tweet_id
-    String  :mb_id
-  end
-
-  require 'beats1/played_track'
+  database = Beats1::Models.init url
 end
 
 tweeter.refresh_last_tweet
@@ -50,7 +35,7 @@ scheduler.every '10s', overlap: false do
   tweeter.refresh_current_program
 end
 
-scheduler.every '60s', overlap: false do
+scheduler.every '120s', overlap: false do
   tweeter.refresh_last_tweet
 end
 

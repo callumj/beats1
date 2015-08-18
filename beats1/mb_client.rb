@@ -20,11 +20,9 @@ module Beats1
       end
     end
 
-    def initialize
-      self.class.init_once
-    end
+    def self.find_artist(name, track_title = nil)
+      init_once
 
-    def find_artist(name, track_title = nil)
       results = MusicBrainz::Artist.search name
       results.select! do |res|
         res[:type] != nil

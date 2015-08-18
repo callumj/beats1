@@ -3,7 +3,7 @@ require 'itunes-search-api'
 require 'cgi'
 require 'pry'
 require 'beats1/tweet_db'
-require 'beats1/mb_client'
+require 'beats1/mb_searcher'
 require 'timeout'
 
 HASHTAGS = "#beats1"
@@ -21,10 +21,6 @@ module Beats1
 
     def db
       self.class.db
-    end
-
-    def mb_client
-      @mb_client ||= Beats1::MBClient.new
     end
 
     def client
@@ -50,10 +46,16 @@ module Beats1
         begin
           opts = {}
           t = "Now up on @Beats1: #{show["title"]}"
+
+          if show_twitter =(twitter_for_show show["title"])
+            t << " @#{show_twitter}"
+          end
+
           if show["image"]
             media_id = url_to_media_id show["image"]
             opts[:media_ids] = media_id if media_id
           end
+
           update t, opts
         rescue StandardError => err
           STDERR.puts err.inspect
@@ -75,8 +77,8 @@ module Beats1
         return {tweet: tweet, updated: false}
       end
 
-      mb_artist = search_mb artist
-      if mb_artist && (tw_artist = mb_artist[:twitter])
+      artist_info = Beats1::MBSearcher.search_mb artist
+      if artist_info && (tw_artist = artist_info.twitter)
         tweet << " (@#{tw_artist})"
       end
 
@@ -122,7 +124,7 @@ module Beats1
         itunes_id: itunes_id,
         genre: result && result["primaryGenreName"],
         tweet_id: tweet_data && tweet_data.id,
-        mb_id: mb_artist && mb_artist[:artist].id
+        mb_id: artist_info && artist_info.identifier
       }
     end
 
@@ -153,12 +155,11 @@ module Beats1
       db.record_tweet(escape) unless db.tweeted?(escape)
     end
 
-    def search_mb(artist)
-      Timeout::timeout(5) do
-        mb_client.find_artist artist
-      end
-    rescue
-      nil
+    def twitter_for_show(show)
+      return unless defined?(::Show) # we have weird lazy load thanks to Sequel
+      s = Show.find(name: "Zane Lowe")
+      return unless s
+      s.twitter
     end
 
     def search_itunes(title, artist)
