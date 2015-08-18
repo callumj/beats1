@@ -157,7 +157,7 @@ module Beats1
 
     def twitter_for_show(show)
       return unless defined?(::Show) # we have weird lazy load thanks to Sequel
-      s = Show.find(name: "Zane Lowe")
+      s = Show.find(name: show)
       return unless s
       s.twitter
     end
