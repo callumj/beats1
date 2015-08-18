@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/callumj/musicbrainz.git
-  revision: 82208df99010925e1cddafe455e6b66636ec2171
+  revision: 9c7ca48719ac1c7dac697d5597fb448bd8406690
   specs:
     musicbrainz (0.7.7)
       faraday
