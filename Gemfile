@@ -9,3 +9,5 @@ gem "musicbrainz", git: "https://github.com/callumj/musicbrainz.git"
 
 gem "sequel"
 gem "pg"
+
+gem "emoji_data"
