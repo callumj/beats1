@@ -9,16 +9,6 @@ module Beats1
     end
 
     def self.search_mb(artist)
-      if defined?(::Artist)
-        a = Artist.find_by_name(artist)
-        if a
-          return SearchResult.new.tap do |s|
-            s.identifier = "internal:#{a.id}"
-            s.twitter = a.twitter
-          end
-        end
-      end
-
       result = begin
         Timeout::timeout(5) do
           Beats1::MBClient.find_artist artist
