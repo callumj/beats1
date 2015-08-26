@@ -99,7 +99,8 @@ module Beats1
           tweet_length += 21
 
           # upload media object of iTunes artwork
-          artworkUrl = result["artworkUrl30"].gsub("30x30-50.jpg", "500x500-75.jpg")
+          artworkUrl = result["artworkUrl30"].gsub(/30x30[^.]*.jpg/, "500x500-75.jpg")
+          puts "Using #{artworkUrl}, original: #{result["artworkUrl30"]}"
           media_id = url_to_media_id artworkUrl
         end
       rescue StandardError => e
