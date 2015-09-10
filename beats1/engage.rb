@@ -5,8 +5,9 @@ require 'emoji_data'
 module Beats1
   class Engage
 
-    DECENT = /thanks\s+to|world|listening|tonight|locked|tuned|premiere|check\s+out|love|can\'t\swait|australia|zane/i
+    DECENT = /shout\s?out|thanks\s+to|world|listening|tonight|locked|tuned|premiere|check\s+out|love|can\'t\swait|australia|zane/i
     IGNORE_USERS = ["beats1plays", "momdanita", "radio_scrobble", "zanelowe", "stormyplanet", "beats1com"]
+    IGNORE_RETWEETS = IGNORE_USERS.map { |s| "RT @#{s}" }
 
     def client
       Twitter::REST::Client.new do |config|
@@ -41,6 +42,13 @@ module Beats1
             next
           end
 
+          if object.retweet? && IGNORE_RETWEETS.any? { |a| object.text.start_with?(a) }
+            puts "\tRetweet of ignored user"
+            next
+          end
+
+          create_tweet object
+
           if decent?(object) || from_me?(object)
             puts "\tFave!"
             begin
@@ -51,6 +59,11 @@ module Beats1
           end
         end
       end
+    end
+
+    def create_tweet(object)
+      t = CapturedTweet.new username: object.user.screen_name, user_id: object.user.id, tweet_id: object.id, tweet: object.text
+      t.save
     end
 
     def banned?(object)
