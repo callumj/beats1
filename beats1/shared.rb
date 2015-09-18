@@ -4,7 +4,7 @@ module Beats1
   module Shared
 
     def self.production?
-      ENV["environment"] == "production"
+      ENV["ENVIRONMENT"] == "production"
     end
 
     def self.twitter_client
