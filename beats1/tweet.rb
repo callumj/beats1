@@ -4,6 +4,7 @@ require 'cgi'
 require 'pry'
 require 'beats1/tweet_db'
 require 'beats1/mb_searcher'
+require 'beats1/shared'
 require 'timeout'
 
 HASHTAGS = "#beats1"
@@ -21,19 +22,6 @@ module Beats1
 
     def db
       self.class.db
-    end
-
-    def client
-      Twitter::REST::Client.new do |config|
-        config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
-        config.consumer_secret     = ENV["TWITTER_CONSUMER_SECRET"]
-        config.access_token        = ENV["TWITTER_ACCESS_TOKEN"]
-        config.access_token_secret = ENV["TWITTER_ACCESS_SECRET"]
-      end
-    end
-
-    def followers(args)
-      client.followers(args)
     end
 
     def refresh_current_program
@@ -133,11 +121,15 @@ module Beats1
       raise "Dupe tweet!" if db.tweeted? tweet
       STDOUT.puts "Tweet: #{tweet}. Opts: #{tw_opts}"
       res = nil
-      begin
-        res = client.update tweet, tw_opts
-      rescue StandardError => err
-        STDERR.puts err.inspect
-        res = client.update tweet
+      if Shared.production?
+        begin
+          res = Shared.twitter_client.update tweet, tw_opts
+        rescue StandardError => err
+          STDERR.puts err.inspect
+          res = Shared.twitter_client.update tweet
+        end
+      else
+        STDOUT.puts "\tIn Development, will not tweet"
       end
       db.record_tweet tweet
       res
@@ -149,7 +141,7 @@ module Beats1
       end
 
       STDERR.puts "Fetching latest tweet...."
-      last_tweet = client.user_timeline(ENV["TWITTER_USER"]).first
+      last_tweet = Shared.twitter_client.user_timeline(ENV["TWITTER_USER"]).first
       return nil unless last_tweet
       @last_tweeted_updated = Time.now
       escape = CGI.unescapeHTML last_tweet.text
@@ -210,7 +202,7 @@ module Beats1
           temp = Tempfile.new(["artwork", ".jpg"])
           temp.write resp.body
           temp.rewind
-          return client.upload temp
+          return Shared.twitter_client.upload temp
         rescue StandardError => err
           STDERR.puts err.inspect
           return nil

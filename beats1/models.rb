@@ -9,6 +9,7 @@ module Beats1
       require 'beats1/artist'
       require 'beats1/played_track'
       require 'beats1/show'
+      require 'beats1/captured_tweet'
       return database
     end
 
@@ -41,6 +42,16 @@ module Beats1
         String  :twitter
 
         index [:name]
+      end
+
+      db.create_table? :captured_tweets do |t|
+        primary_key :id
+        String  :username
+        Bignum  :user_id
+        Bignum  :tweet_id
+        String  :tweet, text: true
+        Time    :recorded_at
+        Bignum  :played_track_id
       end
     end
 

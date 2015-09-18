@@ -6,37 +6,19 @@ require 'beats1'
 require 'rufus-scheduler'
 
 scheduler = Rufus::Scheduler.new
-tweeter = Beats1::Tweet.new
-database = nil
 
-if url = ENV["DB_URL"]
-  database = Beats1::Models.init url
-end
-
-tweeter.refresh_last_tweet
+Beats1::Actions.refresh_last_tweet
 
 scheduler.every '15s', overlap: false do
-  begin
-    data = tweeter.tweet
-    if data[:updated]
-      STDOUT.puts data.inspect
-      if database
-        PlayedTrack.create title: data[:title], artist: data[:artist], played_at: Time.now,
-          last_known_show: data[:last_known_show], itunes_id: data[:itunes_id], genre: data[:genre],
-          tweet_id: data[:tweet_id], mb_id: data[:mb_id]
-      end
-    end
-  rescue Beats1::Tweet::Error => e
-    STDERR.puts "Error: #{e.inspect}"
-  end
+  Beats1::Actions.update
 end
 
 scheduler.every '10s', overlap: false do
-  tweeter.refresh_current_program
+  Beats1::Actions.refresh_current_program
 end
 
 scheduler.every '120s', overlap: false do
-  tweeter.refresh_last_tweet
+  Beats1::Actions.refresh_last_tweet
 end
 
 scheduler.join
