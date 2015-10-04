@@ -3,6 +3,7 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require 'beats1'
+require 'beats1/engage'
 
 begin
   Beats1::Engage.new.begin
